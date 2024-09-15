@@ -37,7 +37,7 @@ This project implements a scalable and efficient sentiment analysis framework us
 
    ```bash
    git clone https://github.com/anmolg1997/Spark_cum_GPU_sentiment_analyzer.git
-   cd sentiment-analysis-pyspark-transformers
+   cd Spark_cum_GPU_sentiment_analyzer
    ```
 
 2. Install the required Python packages:
