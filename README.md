@@ -36,7 +36,7 @@ This project implements a scalable and efficient sentiment analysis framework us
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-repo/sentiment-analysis-pyspark-transformers.git
+   git clone https://github.com/Spark_cum_GPU_sentiment_analyzer/sentiment-analysis-pyspark-transformers.git
    cd sentiment-analysis-pyspark-transformers
    ```
 
