@@ -115,4 +115,4 @@ This framework integrates **MLflow** for experiment tracking. Parameters, metric
 
 ## Contact
 
-For further information or inquiries, feel free to contact **Anmol Jaiswal** at anmol@i-genie.ai.
+For further information or inquiries, feel free to contact **Anmol Jaiswal** at the.anmol.jaiswal@gmail.com
