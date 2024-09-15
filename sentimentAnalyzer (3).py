@@ -11,7 +11,6 @@ Description: This script leverages PySpark, Spark NLP, and Hugging Face Transfor
 Author: Anmol Jaiswal
 Created on: 17 Jun' 2024
 Last updated: 15 July' 2024
-Organization: i-Genie
 Version: 1.1
 """
 
