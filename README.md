@@ -1,118 +1,129 @@
+# Spark GPU Sentiment Analyzer
 
-# Sentiment Analysis with PySpark and Transformers
+Distributed sentiment analysis using **PySpark**, **Spark NLP**, and **Hugging Face Transformers**. The project targets large-scale text: GPU-friendly inference, optional quantization and mixed precision, sentence- and document-level scores, and **MLflow** for experiment tracking. It fits batch pipelines on Spark clusters (including Databricks-style layouts) where you need throughput without giving up modern transformer quality.
 
-This project implements a scalable and efficient sentiment analysis framework using **PySpark**, **Spark NLP**, and **Hugging Face Transformers**. It is designed to process large-scale textual data in a distributed environment, leveraging **GPU acceleration**, **quantized models**, and **mixed precision** techniques for faster and more accurate sentiment analysis. This framework is ideal for handling extensive datasets in real-time and producing detailed sentiment scores at both the sentence and document levels.
+## Tech stack
+
+- **PySpark** — distributed DataFrames and orchestration
+- **Spark NLP** — document assembly, sentence segmentation
+- **Hugging Face Transformers** — model and tokenizer loading
+- **RoBERTa** (and other compatible classifiers) — sentiment heads
+- **MLflow** — parameters, metrics, and run metadata
+- **CUDA** — optional GPU acceleration when a compatible PyTorch build is installed
 
 ## Features
 
-- Distributed text processing using **PySpark** for handling large datasets.
-- **Sentence-level sentiment analysis** using **Spark NLP** for granular results.
-- Supports **state-of-the-art transformer models** (e.g., RoBERTa) from Hugging Face for sentiment analysis.
-- Optimized for **GPU acceleration**, including **quantization** and **mixed precision (bf16/float16)** for faster inference.
-- Dynamic batching and efficient memory management to improve inference speed.
-- Comprehensive logging and experiment tracking using **MLflow**.
+- Distributed text processing with **PySpark** for large datasets
+- **Sentence-level** analysis via Spark NLP’s sentence detector
+- **Transformer models** (e.g. RoBERTa) from Hugging Face for sentiment
+- **GPU acceleration**, **quantization**, and **mixed precision (bf16 / fp16)** where supported
+- Dynamic batching and memory-conscious inference patterns
+- **MLflow** integration for logging and comparison across runs
 
-## Architecture Overview
+## Architecture overview
 
-1. **Data Loading**: Load data (e.g., product reviews) from Parquet or CSV files into PySpark DataFrames.
-2. **Sentence Parsing**: Use Spark NLP’s **SentenceDetector** to split text into sentences for detailed sentiment analysis.
-3. **Transformer Model Setup**: Load pre-trained or fine-tuned transformer models and tokenizers from Hugging Face, optimized with **quantization** and **mixed precision**.
-4. **Batching Strategy**: Apply dynamic or sequential batching based on the dataset and resource availability.
-5. **Sentiment Inference**: Process text through the transformer model to generate sentiment scores.
-6. **Logging and Monitoring**: Track all processes, metrics, and parameters using **MLflow** for experiment tracking.
+1. **Data loading** — Parquet, CSV, or other Spark sources into DataFrames
+2. **Sentence parsing** — Spark NLP **SentenceDetector** (optional) for sentence-level scores
+3. **Model setup** — Hugging Face model + tokenizer, with optional quantization and mixed precision
+4. **Batching** — Dynamic or sequential batches tuned to data size and hardware
+5. **Inference** — Forward passes to produce sentiment labels and/or scores
+6. **Tracking** — MLflow records parameters, metrics, and artifacts per run
 
-## Quick Start
+## Quick start
 
 ### Prerequisites
 
-1. **PySpark**: Ensure PySpark is installed and set up correctly for distributed processing.
-2. **Hugging Face Transformers**: Install the Hugging Face transformers library for NLP models.
-3. **Spark NLP**: Required for sentence parsing and NLP tasks.
-4. **MLflow**: For tracking experiments and logging metrics.
-5. **CUDA**: If running on GPU, ensure CUDA is properly configured.
+- Java and a Spark-compatible environment for PySpark
+- **Spark NLP** JARs / packages as required by your cluster (see [Spark NLP docs](https://nlp.johnsnowlabs.com/docs/en/install))
+- **MLflow** tracking URI and experiment name configured for your deployment
+- For GPU: a **CUDA**-capable setup and a PyTorch build that matches your driver
 
 ### Installation
 
-1. Clone the repository:
+Clone the repository and install Python dependencies:
 
-   ```bash
-   git clone https://github.com/anmolg1997/Spark_cum_GPU_sentiment_analyzer.git
-   cd Spark_cum_GPU_sentiment_analyzer
-   ```
+```bash
+git clone https://github.com/anmolg1997/Spark-GPU-Sentiment-Analyzer.git
+cd Spark-GPU-Sentiment-Analyzer
+pip install -r requirements.txt
+```
 
-2. Install the required Python packages:
+The bundled scripts (`sentimentAnalyzer_spark_gpu_databricks.py`, `sentimentAnalyzer (3).py`) also use packages such as **loguru** and **VADER**; install them if you run those entry points as-is:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install loguru vaderSentiment
+```
 
 ### Configuration
 
-- Set up the **MODEL_DIRECTORY** in the script to the location of your pre-trained transformer model.
-- Update the **MLflow experiment name** to your desired experiment folder.
-- Customize **batch size**, **max sequence length**, and other hyperparameters based on your dataset.
+- Set **MODEL_DIRECTORY** (and related paths) in the script to your Hugging Face or local model location
+- Point **MLflow** at your experiment name and tracking server
+- Tune **batch size**, **max sequence length**, and device settings for your cluster
 
-### Running the Script
+### Running the scripts
 
-1. Initialize a Spark session and load your data:
+From the repository root, you can import the `SentimentAnalyzer` class defined in `sentimentAnalyzer_spark_gpu_databricks.py` (primary GPU-oriented reference) or use `sentimentAnalyzer (3).py` depending on your environment. Example pattern:
 
-   ```python
-   from pyspark.sql import SparkSession
-   spark = SparkSession.builder.appName("Sentiment Analysis").getOrCreate()
-   
-   # Load data into a DataFrame (from Parquet/CSV)
-   df = spark.read.parquet("/path/to/your/data")
-   ```
+```python
+from pyspark.sql import SparkSession
+import pyspark.sql.functions as F
 
-2. Create an instance of the `SentimentAnalyzer` class and run the sentiment analysis:
+from sentimentAnalyzer_spark_gpu_databricks import SentimentAnalyzer
 
-   ```python
-   from sentiment_analyzer import SentimentAnalyzer
-   
-   sentiment_analyzer = SentimentAnalyzer(spark)
-   result_df = sentiment_analyzer.trigger_SentimentInference(df, text_column="text", sentParse=True)
-   
-   # Show results
-   result_df.show(truncate=False)
-   ```
+spark = SparkSession.builder.appName("Sentiment Analysis").getOrCreate()
 
-3. Once the analysis is complete, the results are saved and logged in **MLflow**.
+df = spark.read.parquet("/path/to/your/data")
 
-### Example Usage
+sentiment_analyzer = SentimentAnalyzer(spark)
+result_df = sentiment_analyzer.trigger_SentimentInference(
+    df, text_column="text", sentParse=True
+)
+result_df.show(truncate=False)
+```
+
+Adjust `text_column`, paths, and Spark session builder options for your platform (local, EMR, Databricks, etc.).
+
+### Example usage
 
 ```python
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("Sentiment Analysis").getOrCreate()
     test_sentiment_df = spark.read.parquet("/mnt/prod/inputs/data_sources/reviews.parquet")
-    test_sentiment_df = test_sentiment_df.withColumn("text", F.concat_ws(" . ", "ReviewTitle", "ReviewBody"))
-    
+    test_sentiment_df = test_sentiment_df.withColumn(
+        "text", F.concat_ws(" . ", "ReviewTitle", "ReviewBody")
+    )
+
     sentiment_analyzer = SentimentAnalyzer(spark)
-    result_df = sentiment_analyzer.trigger_SentimentInference(test_sentiment_df, text_column="text", sentParse=True)
+    result_df = sentiment_analyzer.trigger_SentimentInference(
+        test_sentiment_df, text_column="text", sentParse=True
+    )
     result_df.show(truncate=False)
 ```
 
-## Performance Optimizations
+Supporting assets in the repo include `Download & Save _ Huggingface Models.py` for caching models locally and `RoBERTa - Text Classifier Framework.ipynb` for exploratory RoBERTa work.
 
-- **GPU Acceleration**: Automatically detects and leverages GPU for faster inference.
-- **Quantization**: Uses **4-bit quantization** to reduce the memory footprint and speed up transformer models.
-- **Mixed Precision**: Applies **mixed precision (bf16/float16)** for faster computations without sacrificing accuracy.
-- **Dynamic Batching**: Adjusts batch size based on dataset size and system resources for optimized processing.
+## Performance optimizations
 
-## Logging and Experiment Tracking
+- **GPU** — Uses available accelerators when PyTorch is built with CUDA
+- **Quantization** — e.g. 4-bit paths where configured, to shrink memory and speed up inference
+- **Mixed precision** — bf16 / fp16 for faster matmuls where numerically stable
+- **Dynamic batching** — Adapts batch size to workload and memory headroom
 
-This framework integrates **MLflow** for experiment tracking. Parameters, metrics, and logs (including errors) are automatically recorded for each run.
+## Logging and experiment tracking
+
+Runs can be captured in **MLflow** (parameters, metrics, logs, and errors) so you can compare configurations and model versions over time.
 
 ## Customization
 
-- You can change the transformer model by updating the model path in the `SentimentAnalyzer` class.
-- Modify the batching strategy (dynamic, sequential, or no batching) by adjusting the `enable_batching` parameter.
+- Point the pipeline at a different Hugging Face model by changing the model path in `SentimentAnalyzer`
+- Switch batching behavior via parameters such as `enable_batching` where exposed in the script
 
-## Future Work
+## Future work
 
-- Support for **multiple transformer models** for ensemble sentiment analysis.
-- Extending the framework for multi-class sentiment classification.
-- Integration with real-time data pipelines for live sentiment analysis.
+- Multiple transformer models for ensemble sentiment
+- Broader multi-class sentiment taxonomies
+- Tighter integration with streaming or near-real-time ingestion
 
-## Contact
+## License
 
-For further information or inquiries, feel free to contact **Anmol Jaiswal** at the.anmol.jaiswal@gmail.com
+This project is licensed under the MIT License — see [LICENSE](LICENSE).
